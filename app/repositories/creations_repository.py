@@ -14,18 +14,32 @@ class CreationsRepository:
         is_public: bool = True,
         analysis_text: Optional[str] = None,
         recommendation_text: Optional[str] = None,
-        tags_array: Optional[List[str]] = None
+        tags_array: Optional[List[str]] = None,
+        # New fields for expanded options
+        height: Optional[int] = None,
+        body_type: Optional[str] = None,
+        style: Optional[str] = None,
+        colors: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Inserts a new creation record into the database with extended metadata.
         """
         query = """
-            INSERT INTO creations (user_id, media_url, media_type, prompt, gender, age_group, is_public, analysis_text, recommendation_text, tags_array)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, user_id, media_url, media_type, prompt, gender, age_group, is_public, is_picked_by_admin, likes_count, created_at, analysis_text, recommendation_text, tags_array
+            INSERT INTO creations (
+                user_id, media_url, media_type, prompt, gender, age_group, is_public, 
+                analysis_text, recommendation_text, tags_array,
+                height, body_type, style, colors
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING 
+                id, user_id, media_url, media_type, prompt, gender, age_group, is_public, 
+                is_picked_by_admin, likes_count, created_at, analysis_text, recommendation_text, tags_array,
+                height, body_type, style, colors
         """
         new_creation = await conn.fetchrow(
-            query, user_id, media_url, media_type, prompt, gender, age_group, is_public, analysis_text, recommendation_text, tags_array
+            query, user_id, media_url, media_type, prompt, gender, age_group, is_public, 
+            analysis_text, recommendation_text, tags_array,
+            height, body_type, style, colors
         )
         return dict(new_creation)
 

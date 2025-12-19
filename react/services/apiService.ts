@@ -93,26 +93,40 @@ export const fetchCurrentUser = async (): Promise<any | null> => {
 
 /**
  * Creates a new generation task on the backend.
- * @param file The image file to upload.
- * @param prompt The user's text prompt.
- * @param gender The selected gender.
- * @param age_group The selected age group.
- * @param is_public Whether the creation should be public.
+ * @param params An object containing all generation parameters.
  * @returns A promise that resolves to an object containing the task_id.
  */
-export const createGenerationTask = async (
-    file: File, 
-    prompt: string, 
-    gender: string, 
-    age_group: string,
-    is_public: boolean
-): Promise<{ task_id: string }> => {
+export const createGenerationTask = async (params: {
+    imageFile: File | null;
+    prompt: string;
+    gender: string;
+    height: number;
+    bodyType: string;
+    style: string;
+    colors: string[];
+}): Promise<{ task_id: string }> => {
+    const { imageFile, prompt, gender, height, bodyType, style, colors } = params;
+
     const formData = new FormData();
-    formData.append('image', file);
-    formData.append('text', prompt);
+    
+    // The backend expects 'text' for the prompt
+    formData.append('text', prompt); 
     formData.append('gender', gender);
-    formData.append('age_group', age_group);
-    formData.append('is_public', String(is_public)); // FormData needs string values
+    formData.append('height', String(height));
+    formData.append('body_type', bodyType);
+    formData.append('style', style);
+    
+    // Join colors array into a single string
+    formData.append('colors', colors.join(','));
+
+    // The old fields 'age_group' and 'is_public' are not in the new UI.
+    // We can send default/empty values if the backend requires them.
+    formData.append('age_group', ''); // Sending empty as it's not in the new UI
+    formData.append('is_public', 'true'); // Defaulting to true
+
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
 
     const response = await fetchWithAuth('/api/create_task', {
         method: 'POST',

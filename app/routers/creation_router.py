@@ -71,17 +71,24 @@ async def process_creation_task(
         httpx_data = {}
         httpx_files = {}
 
-        # Extract gender, age_group, is_public from form_data for save_creation
+        # Extract all relevant data from form_data dictionary
         prompt = form_data.get("prompt", "N/A")
-        gender = form_data.pop("gender", None)
-        age_group = form_data.pop("age_group", None)
-        is_public = form_data.pop("is_public", True) # Default to True
+        gender = form_data.get("gender")
+        age_group = form_data.get("age_group")
+        is_public = form_data.get("is_public", True)
+        height = form_data.get("height")
+        body_type = form_data.get("body_type")
+        style = form_data.get("style")
+        colors = form_data.get("colors")
 
-        # Add gender and age_group to the data to be sent to the webhook
-        if gender:
-            httpx_data['gender'] = gender
-        if age_group:
-            httpx_data['age_group'] = age_group
+        # Add all extracted data to the httpx_data to be sent to the webhook
+        if prompt: httpx_data['prompt'] = prompt
+        if gender: httpx_data['gender'] = gender
+        if age_group: httpx_data['age_group'] = age_group
+        if height: httpx_data['height'] = height
+        if body_type: httpx_data['body_type'] = body_type
+        if style: httpx_data['style'] = style
+        if colors: httpx_data['colors'] = colors
         
         # Add image content_type to httpx_data if image is present
         if 'image' in form_data and form_data['image']:
@@ -91,9 +98,11 @@ async def process_creation_task(
             if key == 'image' and value:
                 # For image, prepare it for 'files' parameter
                 httpx_files['image'] = (value['filename'], io.BytesIO(value['content']), value['content_type'])
-            elif value:
-                # For other fields, add to 'data' parameter
-                httpx_data[key] = str(value)
+            # All other relevant text data is already handled above
+        
+        # NOTE: 'text' from frontend becomes 'prompt' here. Ensure consistency if needed.
+        httpx_data['prompt'] = prompt
+
 
         # Call n8n webhook
         # webhook_url = 'http://n8n.nemone.store/webhook/c6ebe062-d352-491d-8da3-a5fe2d3f6949'
@@ -174,18 +183,22 @@ async def process_creation_task(
         extracted_data = _extract_analysis_data(gemini_text_output)
 
         # Save the creation metadata to our database using the media_url
-        new_creation = await service.creations_repo.create_creation( # Directly use repo for simplicity here
+        new_creation = await service.creations_repo.create_creation(
             conn, 
             user_id, 
-            media_url_for_db, # Use the directly saved URL
-            'image', # Fixed media_type for now, assuming image from webhook
+            media_url_for_db,
+            'image',
             prompt, 
             gender=gender,
             age_group=age_group,
             is_public=is_public,
             analysis_text=extracted_data["analysis_text"],
             recommendation_text=extracted_data["recommendation_text"],
-            tags_array=extracted_data["tags_array"]
+            tags_array=extracted_data["tags_array"],
+            height=int(height) if height else None,
+            body_type=body_type,
+            style=style,
+            colors=colors
         )
         print(f"DEBUG: Task {task_id} - Creation metadata saved. New creation ID: {new_creation.get('id')}")
         
@@ -211,10 +224,14 @@ async def create_task(
     current_user: dict = Depends(get_current_user),
     service: CreationsService = Depends(),
     # Form fields
-    text: str = Form(...),
+    text: str = Form(""),
     gender: str = Form(""),
-    age_group: str = Form(""),
-    is_public: bool = Form(True), # Added is_public form field
+    height: str = Form(""),
+    body_type: str = Form(""),
+    style: str = Form(""),
+    colors: str = Form(""),
+    age_group: str = Form(""), # Kept for compatibility
+    is_public: bool = Form(True),
     image: Optional[UploadFile] = File(None)
 ):
     task_id = task_manager.create_task()
@@ -222,10 +239,14 @@ async def create_task(
     
     # Prepare form data for background task
     form_data = {
-        "prompt": text, # Renamed from 'text' to 'prompt' to match service
+        "prompt": text,
         "gender": gender,
+        "height": height,
+        "body_type": body_type,
+        "style": style,
+        "colors": colors,
         "age_group": age_group,
-        "is_public": is_public # Pass is_public
+        "is_public": is_public
     }
     if image:
         form_data["image"] = {
