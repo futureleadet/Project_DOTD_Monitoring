@@ -76,6 +76,10 @@ class CreationsService:
         """Retrieves creations for a specific user."""
         return await self.creations_repo.get_user_creations(conn, user_id, limit, offset)
 
+    async def get_liked_creations(self, conn: asyncpg.Connection, user_id: int, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Retrieves creations liked by a specific user."""
+        return await self.creations_repo.get_liked_creations_by_user(conn, user_id, limit, offset)
+
     async def get_feed_creations(self, conn: asyncpg.Connection, sort_by: str = "latest", limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
         """Retrieves public creations for the feed, with sorting and pagination."""
         return await self.creations_repo.get_feed_creations(conn, sort_by, limit, offset)

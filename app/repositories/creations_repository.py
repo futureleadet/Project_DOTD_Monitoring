@@ -88,6 +88,26 @@ class CreationsRepository:
             params=[user_id]
         )
 
+    async def get_liked_creations_by_user(self, conn: asyncpg.Connection, user_id: int, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """
+        Retrieves all creations liked by a specific user, with pagination.
+        """
+        query = """
+            SELECT c.id, c.user_id, c.media_url, c.media_type, c.prompt, c.gender, c.age_group, 
+                   c.is_public, c.is_picked_by_admin, c.likes_count, c.created_at, 
+                   c.analysis_text, c.recommendation_text, c.tags_array,
+                   u.name as author_name, u.picture as author_picture
+            FROM creations c
+            JOIN users u ON c.user_id = u.id
+            JOIN likes l ON c.id = l.creation_id
+            WHERE l.user_id = $1
+            ORDER BY l.created_at DESC
+            LIMIT $2 OFFSET $3
+        """
+        creations = await conn.fetch(query, user_id, limit, offset)
+        # Manually add is_liked = True since we are fetching liked items
+        return [{**dict(row), 'is_liked': True} for row in creations]
+
     async def get_feed_creations(self, conn: asyncpg.Connection, sort_by: str = "latest", limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
         """
         Retrieves public creations for the feed, with sorting and pagination.

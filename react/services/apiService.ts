@@ -173,6 +173,21 @@ export const getCreationsForUser = async (limit: number = 10, offset: number = 0
 };
 
 /**
+ * Fetches creations liked by the current logged-in user.
+ * @param limit Number of creations to fetch.
+ * @param offset Offset for pagination.
+ * @returns A promise that resolves to a list of Creation objects.
+ */
+export const getLikedCreations = async (limit: number = 10, offset: number = 0): Promise<Creation[]> => {
+    const response = await fetchWithAuth(`/api/users/me/liked_creations?limit=${limit}&offset=${offset}`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to fetch liked creations' }));
+        throw new Error(errorData.detail || 'Server error');
+    }
+    return response.json();
+};
+
+/**
  * Fetches public creations for the feed.
  * @param sortBy 'latest' or 'popular'.
  * @param limit Number of creations to fetch.

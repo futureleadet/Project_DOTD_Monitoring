@@ -288,6 +288,20 @@ async def get_my_creations(
     user_id = int(current_user["sub"])
     return await service.get_user_creations(conn, user_id, limit, offset)
 
+@router.get("/users/me/liked_creations", response_model=List[Dict[str, Any]])
+async def get_my_liked_creations(
+    current_user: dict = Depends(get_current_user),
+    service: CreationsService = Depends(),
+    conn: asyncpg.Connection = Depends(get_db_connection),
+    limit: int = 10,
+    offset: int = 0
+):
+    """
+    Returns a list of creations liked by the current logged-in user.
+    """
+    user_id = int(current_user["sub"])
+    return await service.get_liked_creations(conn, user_id, limit, offset)
+
 @router.get("/creations/feed", response_model=List[Dict[str, Any]])
 async def get_feed(
     service: CreationsService = Depends(),

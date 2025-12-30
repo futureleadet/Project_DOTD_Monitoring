@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, ViewState, Creation } from '../types';
 import { Settings, Zap, Trash2, X, Sparkles, Download } from 'lucide-react';
-import { getCreationsForUser, deleteCreation } from '../services/apiService';
+import { getCreationsForUser, getLikedCreations, deleteCreation } from '../services/apiService';
 
 interface MyPageProps {
   user: User;
@@ -11,30 +11,35 @@ interface MyPageProps {
 export const MyPage: React.FC<MyPageProps> = ({ user, onNavigate }) => {
   const [tab, setTab] = useState<'generated' | 'liked'>('generated');
   const [myCreations, setMyCreations] = useState<Creation[]>([]);
-  const [likedCreations, setLikedCreations] = useState<Creation[]>([]); // Placeholder for future
+  const [likedCreations, setLikedCreations] = useState<Creation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCreation, setSelectedCreation] = useState<Creation | null>(null);
 
   useEffect(() => {
-    const fetchMyCreations = async () => {
+    const fetchData = async () => {
       if (!user) return;
       setLoading(true);
       setError(null);
+      
       try {
-        const creations = await getCreationsForUser();
-        setMyCreations(creations);
+        if (tab === 'generated') {
+          const creations = await getCreationsForUser();
+          setMyCreations(creations);
+        } else { // tab === 'liked'
+          const creations = await getLikedCreations();
+          setLikedCreations(creations);
+        }
       } catch (err) {
-        setError("Failed to load your creations. Please try again later.");
+        setError(`Failed to load ${tab} creations. Please try again later.`);
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMyCreations();
-    // TODO: Add logic to fetch liked creations when API is ready
-  }, [user]);
+    fetchData();
+  }, [user, tab]);
   
   const handleDelete = async (creationId: string | number) => {
     if (!window.confirm("Are you sure you want to delete this creation? This action cannot be undone.")) {

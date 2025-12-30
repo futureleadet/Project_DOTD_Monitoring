@@ -204,6 +204,12 @@ export const Generate: React.FC<GenerateProps> = ({ currentUser, onNavigate, onA
     return (
       <div className="min-h-screen bg-gray-50 pb-24 pt-4">
         <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center">
+                <button onClick={() => onNavigate(ViewState.HOME)} className="flex items-center text-sm font-semibold text-gray-600 hover:text-black">
+                    <ChevronLeft size={20} className="mr-1" />
+                    Home
+                </button>
+            </div>
            {/* Image Result */}
            <div className="relative">
              <img src={generatedImage} alt="Generated Fashion" className="w-full h-auto max-h-[60vh] object-contain bg-gray-100" />
